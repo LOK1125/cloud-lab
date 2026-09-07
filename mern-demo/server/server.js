@@ -15,6 +15,10 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Kết nối MongoDB Atlas thành công!'))
   .catch(err => console.error('Lỗi kết nối MongoDB:', err.message));
 
+  app.get('/api/hello', (req, res) => {
+  res.json({ message: 'Hello World' });
+});
+
 // Trang chủ kiểm tra server
 app.get('/', (req, res) => {
   res.send('Server Node.js đang hoạt động!');
