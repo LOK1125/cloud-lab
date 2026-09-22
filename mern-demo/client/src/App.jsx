@@ -6,6 +6,9 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  // State quản lý trạng thái chỉnh sửa
+  const [editingStudent, setEditingStudent] = useState(null)
+
   // State quản lý Form nhập sinh viên
   const [formData, setFormData] = useState({
     studentId: '',
@@ -43,6 +46,22 @@ function App() {
       ...formData,
       [e.target.name]: e.target.value
     })
+  }
+
+  // Chuyển dữ liệu sinh viên lên Form khi bấm nút "Sửa"
+  const handleEditClick = (student) => {
+    setEditingStudent(student)
+    setFormData({
+      studentId: student.studentId || '',
+      name: student.name || '',
+      email: student.email || ''
+    })
+  }
+
+  // Hủy bỏ chế độ chỉnh sửa
+  const handleCancelEdit = () => {
+    setEditingStudent(null)
+    setFormData({ studentId: '', name: '', email: '' })
   }
 
   // Gửi dữ liệu POST /api/students (Thêm mới)
@@ -88,14 +107,7 @@ function App() {
       return;
     }
 
-    const existingStudent = students.find(s => s.studentId === formData.studentId.trim());
-
-    if (!existingStudent) {
-      alert('Không tìm thấy sinh viên có MSSV này trong hệ thống!');
-      return;
-    }
-
-    const targetId = existingStudent._id || existingStudent.studentId;
+    const targetId = editingStudent._id || editingStudent.studentId;
 
     fetch(`${API_URL}/${targetId}`, {
       method: 'PUT',
@@ -114,7 +126,7 @@ function App() {
       .then(() => {
         alert('Cập nhật sinh viên thành công!');
         fetchStudents();
-        setFormData({ studentId: '', name: '', email: '' });
+        handleCancelEdit();
       })
       .catch((err) => {
         alert(`Lỗi từ Server: ${err.message}`);
@@ -125,7 +137,6 @@ function App() {
   // Xử lý Xóa sinh viên (DELETE /api/students/:id)
   // -------------------------------------------------------------
   const handleDelete = (student) => {
-    // Thông báo xác nhận với 2 lựa chọn (OK = Xóa, Cancel = Hủy)
     const confirmDelete = window.confirm(
       `Bạn có chắc chắn muốn xóa sinh viên ${student.name} (MSSV: ${student.studentId}) không?`
     );
@@ -145,7 +156,7 @@ function App() {
         })
         .then(() => {
           alert('Xóa sinh viên thành công!');
-          fetchStudents(); // Tải lại danh sách sau khi xóa
+          fetchStudents();
         })
         .catch((err) => {
           alert(`Lỗi từ Server: ${err.message}`);
@@ -159,7 +170,7 @@ function App() {
 
       {/* FORM NHẬP THÔNG TIN SINH VIÊN */}
       <form onSubmit={handleSubmit} style={{ marginBottom: '30px', padding: '15px', border: '1px solid #ccc', borderRadius: '5px' }}>
-        <h3>Thêm / Cập Nhật Sinh Viên</h3>
+        <h3>{editingStudent ? 'Cập Nhật Thông Tin Sinh Viên' : 'Thêm Sinh Viên Mới'}</h3>
         <div style={{ marginBottom: '10px' }}>
           <label style={{ display: 'block', marginBottom: '5px' }}>Mã Sinh Viên (MSSV):</label>
           <input
@@ -197,17 +208,28 @@ function App() {
         </div>
 
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button type="submit" style={{ padding: '8px 15px', backgroundColor: '#28a745', color: '#fff', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>
-            Thêm Sinh Viên
-          </button>
-          
-          <button 
-            type="button" 
-            onClick={handleUpdate}
-            style={{ padding: '8px 15px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
-          >
-            Cập Nhật Sinh Viên
-          </button>
+          {!editingStudent ? (
+            <button type="submit" style={{ padding: '8px 15px', backgroundColor: '#28a745', color: '#fff', border: 'none', borderRadius: '3px', cursor: 'pointer' }}>
+              Thêm Sinh Viên
+            </button>
+          ) : (
+            <>
+              <button 
+                type="button" 
+                onClick={handleUpdate}
+                style={{ padding: '8px 15px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
+              >
+                Hoàn Tất Cập Nhật
+              </button>
+              <button 
+                type="button" 
+                onClick={handleCancelEdit}
+                style={{ padding: '8px 15px', backgroundColor: '#6c757d', color: '#fff', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
+              >
+                Hủy
+              </button>
+            </>
+          )}
         </div>
       </form>
 
@@ -236,13 +258,22 @@ function App() {
                   <td>{student.name}</td>
                   <td>{student.email}</td>
                   <td style={{ textAlign: 'center' }}>
-                    {/* Nút Xóa sinh viên */}
-                    <button 
-                      onClick={() => handleDelete(student)}
-                      style={{ padding: '4px 10px', backgroundColor: '#dc3545', color: '#fff', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
-                    >
-                      Xóa
-                    </button>
+                    <div style={{ display: 'flex', gap: '5px', justifyContent: 'center' }}>
+                      {/* Nút Sửa (Cập nhật) */}
+                      <button 
+                        onClick={() => handleEditClick(student)}
+                        style={{ padding: '4px 10px', backgroundColor: '#ffc107', color: '#000', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
+                      >
+                        Sửa
+                      </button>
+                      {/* Nút Xóa sinh viên */}
+                      <button 
+                        onClick={() => handleDelete(student)}
+                        style={{ padding: '4px 10px', backgroundColor: '#dc3545', color: '#fff', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
+                      >
+                        Xóa
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
